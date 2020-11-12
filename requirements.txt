@@ -1,0 +1,7 @@
+django
+djangorestframework
+requests
+pycrypto
+pycryptodome
+redis
+gunicorn~=20.0

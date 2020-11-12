@@ -1,0 +1,34 @@
+version: '3.5'
+
+services:
+  redis:
+    restart: always
+    image: redis
+    networks:
+      - gharar_net
+
+  web:
+    restart: always
+    build:
+      context: .
+    command: >
+      sh -c "python manage.py makemigrations && python manage.py migrate && python manage.py test &&
+             python manage.py runserver 0.0.0.0:8000"
+    networks:
+      - gharar_net
+    expose:
+      - "8000"
+    volumes:
+      - .:/code
+    depends_on:
+      - redis
+    environment:
+      - SERVER_PORT=8000
+      - SIGNING_KEY=${SIGNING_KEY}
+      - VERIFYING_KEY=${VERIFYING_KEY}
+    env_file:
+      - .env
+
+
+networks:
+  gharar_net: {}
