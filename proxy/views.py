@@ -1,12 +1,11 @@
 import json
-import requests
 from django.conf import settings
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from proxy.cache_repo import CacheRepository
-from proxy.utils import decrypt
+from proxy.utils import decrypt, get_driver
 
 
 class LoginView(APIView):
@@ -14,7 +13,9 @@ class LoginView(APIView):
 
     def post(self, *args, **kwargs):
         try:
-            auth_token = self.request.META['headers']['HTTP_AUTH_TOKEN']
+            auth_token = self.request.META.get('HTTP_AUTH_TOKEN')
+            if auth_token is None:
+                auth_token = self.request.META['headers']['HTTP_AUTH_TOKEN']
         except KeyError:
             return Response(status=status.HTTP_400_BAD_REQUEST,
                             data={'message': 'HTTP_AUTH_TOKEN header not found'})
@@ -33,16 +34,15 @@ class LoginView(APIView):
             return Response(status=status.HTTP_400_BAD_REQUEST,
                             data={'message': 'team, channel or room_id not provided'})
 
-        payload = {'login_id': credentials.get('login_id', None),
-                   'password': credentials.get('password', None)}
-        res = requests.post(url=self.MATTER_MOST_LOGIN_ENDPOINT, data=payload)
-
-        if res.status_code == status.HTTP_201_CREATED:
-            data = {'access_token': res.headers.get('Token'),
+        try:
+            driver = get_driver(credentials.get('login_id', None),
+                                credentials.get('password', None))
+            driver.login()
+            data = {'access_token': driver.client.token,
                     'channel': channel,
                     'team': team}
-            CacheRepository.store(room_id, data, 300000)  # todo fix it
-            return Response(status=status.HTTP_201_CREATED)
+            CacheRepository.store(room_id, str(data), 300000)  # todo fix it
 
-        else:
-            return Response(status=res.status_code, data=res.json())
+            return Response(status=status.HTTP_201_CREATED)
+        except Exception as e:
+            return Response(status=status.HTTP_401_UNAUTHORIZED)
