@@ -24,19 +24,31 @@ class LoginAPITests(TestCase):
         self.http_auth_token_header = 'HTTP_AUTH_TOKEN'
 
     @mock.patch('proxy.views.decrypt')
-    @mock.patch('requests.post')
+    @mock.patch('proxy.views.get_driver')
     @mock.patch('proxy.cache_repo.CacheRepository.store')
-    def test_successful(self, store, post, decrypt):
+    def test_successful(self, store, get_driver, decrypt):
         decrypt.return_value = '{"login_id": "a username",' \
                                '"password": "a password",' \
                                '"team": "a team",' \
                                '"channel": "a channel",' \
                                '"room_id": "a room_id"}'
-        post.return_value = MockResponse({}, 201, {'Token': 'some another token'})
+
+        class MockGetDriver:
+            class Client:
+                def __init__(self):
+                    self.token = 'my personal access token'
+
+            def __init__(self):
+                self.client = self.Client()
+
+            def login(self):
+                pass
+
+        get_driver.return_value = MockGetDriver()
         store.return_value = None
         res = self.client.post(self.endpoint, headers={self.http_auth_token_header: self.auth_token})
         decrypt.assert_called_once()
-        post.assert_called_once()
+        get_driver.assert_called_once()
         store.assert_called_once()
         self.assertEqual(res.status_code, status.HTTP_201_CREATED)
         self.assertIsNone(res.data)
@@ -64,14 +76,14 @@ class LoginAPITests(TestCase):
         self.assertEqual(res.data, {'message': 'team, channel or room_id not provided'})
 
     @mock.patch('proxy.views.decrypt')
-    @mock.patch('requests.post')
-    def test_no_username_password(self, post, decrypt):
+    @mock.patch('proxy.views.get_driver')
+    def test_no_username_password(self, get_driver, decrypt):
         decrypt.return_value = '{"team": "a team",' \
                                '"channel": "a channel",' \
                                '"room_id": "a room_id"}'
-        post.return_value = MockResponse({'message': 'unauthorized'}, 401)
+        get_driver.return_value = None
         res = self.client.post(self.endpoint, headers={self.http_auth_token_header: self.auth_token})
         decrypt.assert_called_once()
-        post.assert_called_once()
+        get_driver.assert_called_once()
         self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
         self.assertEqual(res.data, {'message': 'unauthorized'})
