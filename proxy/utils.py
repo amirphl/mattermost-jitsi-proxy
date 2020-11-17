@@ -12,11 +12,9 @@ def decrypt(text):
     return cipher.decrypt(b64_string)
 
 
-def get_driver(username, password):
-    return Driver({
-        'url': settings.MATTERMOST_API_ENDPOINT,
-        'login_id': username,
-        'password': password,
+def get_driver(username=None, password=None, access_token=None):
+    defaults = {
+        'url': settings.MATTERMOST_API_URL,
         'scheme': 'http',
         'port': 8065,
         'basepath': '/api/v4',
@@ -26,4 +24,14 @@ def get_driver(username, password):
         'timeout': 30,
         'request_timeout': None,
         'debug': False,
-    })
+    }
+    if access_token is None:
+        defaults.update({
+            'login_id': username,
+            'password': password
+        })
+    else:
+        defaults.update({
+            'token': access_token,
+        })
+    return Driver(defaults)
