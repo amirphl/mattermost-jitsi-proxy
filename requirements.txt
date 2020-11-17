@@ -6,3 +6,4 @@ pycryptodome
 redis
 gunicorn~=20.0
 mattermostdriver
+celery

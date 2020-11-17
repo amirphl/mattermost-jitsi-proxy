@@ -4,8 +4,6 @@ services:
   rabbitmq:
     restart: always
     image: rabbitmq
-    ports:
-      - "5672:5672"
     networks:
       - my_net
 
@@ -19,17 +17,14 @@ services:
     restart: always
     build:
       context: .
-    command: >
-      sh -c "python manage.py makemigrations && python manage.py migrate && python manage.py test &&
-             python manage.py runserver 0.0.0.0:8000"
+    command: ./docker-entrypoint.sh
     networks:
       - my_net
     ports:
       - "8000:8000"
-    volumes:
-      - .:/code
     depends_on:
       - redis
+      - rabbitmq
     environment:
       - SERVER_PORT=8000
       - SIGNING_KEY=${SIGNING_KEY}
@@ -48,6 +43,7 @@ services:
       - my_net
     env_file:
       - .env
+
 
 networks:
   my_net: {}

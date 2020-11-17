@@ -115,11 +115,18 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 
-MATTERMOST_API_ENDPOINT = os.getenv('MATTERMOST_API_ENDPOINT')
-assert MATTERMOST_API_ENDPOINT is not None
+MATTERMOST_API_URL = os.getenv('MATTERMOST_API_URL')
+assert MATTERMOST_API_URL is not None
 REDIS_HOST = 'redis'
 REDIS_PORT = 6379
 VERIFYING_KEY = os.getenv('VERIFYING_KEY')
 SIGNING_KEY = os.getenv('SIGNING_KEY')
 assert VERIFYING_KEY is not None
 assert SIGNING_KEY is not None
+
+# Celery Configuration Options
+# CELERY_TIMEZONE = "Australia/Tasmania"
+# CELERY_TASK_TRACK_STARTED = True
+# CELERY_TASK_TIME_LIMIT = 30 * 60
+
+EVENT_HANDLER_ADDRESS = 'http://websockets:8080/connections/'
