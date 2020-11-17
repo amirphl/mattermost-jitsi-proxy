@@ -25,6 +25,7 @@ services:
     depends_on:
       - redis
       - rabbitmq
+      - websockets
     environment:
       - SERVER_PORT=8000
       - SIGNING_KEY=${SIGNING_KEY}
@@ -36,11 +37,13 @@ services:
     restart: always
     build:
       context: .
-      dockerfile: Dockerfile2
+      dockerfile: websocket_server_dockerfile
     command: >
-      sh -c "python server.py"
+      sh -c "python websocket_server.py"
     networks:
       - my_net
+    depends_on:
+      - xmpp_client
     env_file:
       - .env
 
@@ -48,7 +51,7 @@ services:
     restart: always
     build:
       context: .
-      dockerfile: Dockerfile3
+      dockerfile: xmpp_client_dockerfile
     networks:
       - my_net
     env_file:
