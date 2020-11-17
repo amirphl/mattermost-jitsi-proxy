@@ -24,6 +24,7 @@ class LoginView(APIView):
         try:
             credentials = json.loads(decrypt(auth_token))
         except Exception as e:
+            print(e)
             return Response(status=status.HTTP_400_BAD_REQUEST,
                             data={'message': 'received invalid token'})
 
@@ -36,24 +37,30 @@ class LoginView(APIView):
                             data={'message': 'team, channel or room_id not provided'})
 
         try:
-            driver = get_driver(credentials.get('login_id', None),
-                                credentials.get('password', None))
+            user = credentials.get('login_id', None)
+            password = credentials.get('password', None)
+            driver = get_driver(user, password)
             driver.login()
             team = driver.teams.get_team_by_name(team_name)
             team_id = team['id']
             channel = driver.channels.get_channel_by_name(team_id, channel_name)
             room_data = {
                 'access_token': driver.client.token,
+                'user': user,
                 'channel_id': channel['id'],
                 'team_id': team_id
             }
-            CacheRepository.store(room_id, json.dumps(room_data), 30000)
+            print('adding credentials to redis ...')
+            CacheRepository.store(room_id, json.dumps(room_data), 30 * 60)
             room_data['room_id'] = room_id
-            requests.post(url=settings.EVENT_HANDLER_ADDRESS, data=room_data,
+            print('initiating a websocket event handler ...')
+            requests.post(url=settings.EVENT_HANDLER_ADDRESS,
+                          data=room_data,
                           headers={'Content-type': 'application/json'})
-
+            print('done')
             return Response(status=status.HTTP_201_CREATED)
         except Exception as e:
+            print(e)
             return Response(status=status.HTTP_401_UNAUTHORIZED)
 
 
@@ -64,6 +71,7 @@ class MessageView(APIView):
             plain_data = CacheRepository.get(room_id)
             data = json.loads(plain_data)
         except Exception as e:
+            print(e)
             return Response(status=status.HTTP_401_UNAUTHORIZED)
 
         if 'message' not in self.request.data.keys():
@@ -84,4 +92,5 @@ class MessageView(APIView):
             })
             return Response(status=201)
         except Exception as e:
+            print(e)
             return Response(status=status.HTTP_503_SERVICE_UNAVAILABLE)
