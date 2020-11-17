@@ -1,0 +1,1 @@
+curl -d '{"username":"your Mattermost username" , "password":"your Mattermost password", "team_id":"team name", "channel_id":"public channel name", "room_id":"room name"}' -H "Content-Type: application/json" -X POST http://<your IP ex: localhost:8000>/generate-token/ -v

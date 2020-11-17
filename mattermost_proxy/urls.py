@@ -16,8 +16,10 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 
+from proxy.views import MakeEncryptionView
+
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('api/v1/', include('proxy.urls'))
+    path('api/v1/', include('proxy.urls')),
+    path('generate-token/', MakeEncryptionView.as_view())
 ]
-

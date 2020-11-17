@@ -1,4 +1,5 @@
 import json
+import ast
 import requests
 from django.conf import settings
 
@@ -7,7 +8,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from proxy.cache_repo import CacheRepository
-from proxy.utils import decrypt, get_driver
+from proxy.utils import decrypt, get_driver, encrypt
 
 
 class LoginView(APIView):
@@ -22,7 +23,8 @@ class LoginView(APIView):
                             data={'message': 'HTTP_AUTH_TOKEN header not found'})
 
         try:
-            credentials = json.loads(decrypt(auth_token))
+            text = decrypt(auth_token).decode('utf-8').replace('\'', '"')
+            credentials = json.loads(text)
         except Exception as e:
             print(e)
             return Response(status=status.HTTP_400_BAD_REQUEST,
@@ -94,3 +96,21 @@ class MessageView(APIView):
         except Exception as e:
             print(e)
             return Response(status=status.HTTP_503_SERVICE_UNAVAILABLE)
+
+
+class MakeEncryptionView(APIView):
+    def post(self, *args, **kwargs):
+        username = self.request.data['username']
+        password = self.request.data['password']
+        room_id = self.request.data['room_id']
+        channel = self.request.data['channel_id']
+        team = self.request.data['team_id']
+        data = {
+            "login_id": username,
+            "password": password,
+            "room_id": room_id,
+            "channel": channel,
+            "team": team
+        }
+        token = encrypt(data)
+        return Response(status=status.HTTP_200_OK, data={'token': token})

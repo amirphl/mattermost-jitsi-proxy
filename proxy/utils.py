@@ -12,6 +12,14 @@ def decrypt(text):
     return cipher.decrypt(b64_string)
 
 
+def encrypt(text):
+    key = RSA.importKey(settings.SIGNING_KEY)
+    cipher = PKCS1_OAEP.new(key)
+    encrypted = cipher.encrypt(str(text).encode('utf-8'))
+    b64_string = str(base64.b64encode(encrypted), 'utf-8')
+    return b64_string
+
+
 def get_driver(username=None, password=None, access_token=None):
     defaults = {
         'url': settings.MATTERMOST_API_URL,
